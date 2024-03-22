@@ -1,46 +1,56 @@
-import time, json
-from selenium import webdriver
+import time, json, asyncio
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from .config import username, password
 
 
-options = webdriver.ChromeOptions()
-options.add_experimental_option("excludeSwitches", ["enable-logging"])
-driver = webdriver.Chrome(options=options)
-driver.maximize_window()
-driver.get("https://dolar.set-icap.com/auth/login/")
-wait = WebDriverWait(driver, 20)
+def login(username, password, driver):
+    try:
+        driver.get("https://dolar.set-icap.com/auth/login/")
 
-user_input = driver.find_element(By.XPATH, '(//input[@name="username"])')
-user_input.send_keys(username)
+        user_input = WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located((By.XPATH, '//input[@name="username"]'))
+        )
+        user_input.send_keys(username)
 
-pwd_input = driver.find_element(By.XPATH, '(//input[@name="password"])')
-pwd_input.send_keys(password)
+        pwd_input = driver.find_element(By.XPATH, '(//input[@name="password"])')
+        pwd_input.send_keys(password)
 
-login_button = driver.find_element(
-    By.XPATH, '(//button[@class="btn btn-lg btn-block Button__btnPrimary__29Ht"])'
-)
-login_button.click()
+        login_button = driver.find_element(
+            By.XPATH,
+            '(//button[@class="btn btn-lg btn-block Button__btnPrimary__29Ht"])',
+        )
+        login_button.click()
 
-wait.until(
-    EC.presence_of_element_located(
-        (By.XPATH, '//div[@class="mar-no text-semibold Home__content__ebQk"]')
-    )
-)
+        WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located(
+                (By.XPATH, '//div[@class="mar-no text-semibold Home__content__ebQk"]')
+            )
+        )
+        return True
 
-while True:
-    value = driver.find_element(
-        By.XPATH, '(//div[@class="mar-no text-semibold Home__content__ebQk"])'
-    ).text
+    except Exception as e:
+        print(e)
+        return False
 
-    data = {"time_stamp": time.ctime(time.time()), "value": value}
-    print(data)
 
-    # Open the JSON file for writing
-    with open("data.json", "w") as file:
-        # Write JSON data to the file
-        json.dump(data, file)
+async def main(driver):
+    try:
+        while True:
+            value = driver.find_element(
+                By.XPATH, '(//div[@class="mar-no text-semibold Home__content__ebQk"])'
+            ).text
 
-    time.sleep(30)
+            data = {"time_stamp": time.ctime(time.time()), "value": value}
+            print(data)
+
+            # Open the JSON file for writing
+            with open("data.json", "w") as file:
+                # Write JSON data to the file
+                json.dump(data, file)
+            await asyncio.sleep(30)  # Sleep for 30 seconds
+    except (asyncio.exceptions.CancelledError, KeyboardInterrupt):
+        driver.quit()
+        print("Task was cancelled")
+    except Exception as e:
+        print(f"Error in main function: {e}")
