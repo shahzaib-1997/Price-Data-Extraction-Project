@@ -9,6 +9,7 @@ from dollar_set_fx import login, main
 
 def run_driver():
     options = webdriver.ChromeOptions()
+    options.add_argument("--headless")
     options.add_experimental_option("excludeSwitches", ["enable-logging"])
     driver = webdriver.Chrome(options=options)
     driver.maximize_window()
@@ -26,8 +27,8 @@ class Credentials(BaseModel):
     password: str
 
 
-@app.get("/")
-async def root():
+@app.get("/get_data")
+async def get_data():
     try:
         # Open the JSON file for reading
         with open("data.json", "r") as file:
